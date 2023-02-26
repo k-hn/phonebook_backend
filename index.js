@@ -81,13 +81,23 @@ const isExistingID = (id) => {
   return idList.includes(id)
 }
 
+const nameExists = (name) => {
+  const nameList = persons.map(person => person.name)
+  return nameList.includes(name)
+}
+
 app.post("/api/persons", (request, response) => {
   const body = request.body
-  console.log(body)
 
-  if (!body.name) {
-    return response.status(404).json({
-      error: "content missing"
+  if (!body.name || !body.number) {
+    return response.status(400).json({
+      error: "name or number missing"
+    })
+  }
+
+  if (nameExists(body.name)) {
+    return response.status(400).json({
+      error: "name must be unique"
     })
   }
 
