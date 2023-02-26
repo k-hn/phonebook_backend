@@ -1,7 +1,7 @@
 const express = require("express")
 const app = express()
 
-const persons = [
+let persons = [
   {
     "id": 1,
     "name": "Arto Hellas",
@@ -50,6 +50,15 @@ app.get("/api/persons/:id", (request, response) => {
       error: "not found"
     })
   }
+})
+
+app.delete("/api/persons/:id", (request, response) => {
+  const id = Number(request.params.id)
+
+  // Create a new list of persons excluding provided id
+  persons = persons.filter(person => person.id !== id)
+  // Send No content(204) to indicate success
+  response.status(204).end()
 })
 
 const PORT = 3001
