@@ -5,6 +5,7 @@ const app = express()
 
 app.use(express.json())
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :post-payload'))
+app.use(express.static('build'))
 
 // define custom token
 morgan.token("post-payload", function (req, res) {
@@ -119,7 +120,7 @@ app.post("/api/persons", (request, response) => {
   response.json(newPerson)
 })
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
