@@ -14,6 +14,19 @@ morgan.token("post-payload", function (req, res) {
   return JSON.stringify(req.body)
 })
 
+// Middleware for error handling
+const errorHandler = (error, request, response, next) => {
+  console.log(error.message)
+
+  if (error.name === "CastError") {
+    return response.status(400).send({
+      error: "malformed id"
+    })
+  }
+
+  next(error)
+}
+
 let persons = [
   {
     "id": 1,
@@ -54,26 +67,26 @@ app.get("/api/persons", (request, response) => {
   })
 })
 
-app.get("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id)
-  const person = persons.find((p) => p.id === id)
-
-  if (person) {
-    response.json(person)
-  } else {
-    response.status(404).json({
-      error: "not found"
+app.get("/api/persons/:id", (request, response, next) => {
+  Phonebook
+    .findById(request.params.id)
+    .then(person => {
+      if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
     })
-  }
+    .catch(error => next(error))
 })
 
-app.delete("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id)
-
-  // Create a new list of persons excluding provided id
-  persons = persons.filter(person => person.id !== id)
-  // Send No content(204) to indicate success
-  response.status(204).end()
+app.delete("/api/persons/:id", (request, response, next) => {
+  Phonebook.findByIdAndDelete(request.params.id)
+    .then(result => {
+      console.log(`Contact id: ${request.params.id} deleted`)
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
 const generateRandomID = () => {
@@ -124,6 +137,8 @@ app.post("/api/persons", (request, response) => {
     response.json(savedPerson)
   })
 })
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
