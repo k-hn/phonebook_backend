@@ -114,17 +114,18 @@ app.post("/api/persons", (request, response) => {
     })
   }
 
-  const newPerson = {
+  const newPerson = new Phonebook({
     name: body.name,
     number: body.number,
     id: generateUniqueID()
-  }
+  })
 
-  persons = persons.concat(newPerson)
-  response.json(newPerson)
+  newPerson.save().then((savedPerson) => {
+    response.json(savedPerson)
+  })
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
