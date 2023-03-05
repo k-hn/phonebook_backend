@@ -32,45 +32,25 @@ const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: "unknown endpoint" })
 }
 
-let persons = [
-  {
-    "id": 1,
-    "name": "Arto Hellas",
-    "number": "040-123456"
-  },
-  {
-    "id": 2,
-    "name": "Ada Lovelace",
-    "number": "39-44-5323523"
-  },
-  {
-    "id": 3,
-    "name": "Dan Abramov",
-    "number": "12-43-234345"
-  },
-  {
-    "id": 4,
-    "name": "Mary Poppendieck",
-    "number": "39-23-6423122"
-  }
-]
-
 
 app.get("/info", (request, response) => {
-  const personsCount = persons.length
   const now = Date()
 
-  response.send(`
-    <p>Phonebook has info for ${personsCount} people</p>
+  getPersons().then(persons => {
+    response.send(`
+    <p>Phonebook has info for ${persons.length} people</p>
     <p>${now}</p>
   `)
+  })
 })
 
 app.get("/api/persons", (request, response) => {
-  Phonebook.find({}).then((persons) => {
-    response.json(persons)
-  })
+  getPersons().then(persons => response.json(persons))
 })
+
+const getPersons = () => {
+  return Phonebook.find({})
+}
 
 app.get("/api/persons/:id", (request, response, next) => {
   Phonebook
@@ -128,11 +108,15 @@ const isExistingID = (id) => {
 }
 
 const nameExists = (name) => {
-  const nameList = persons.map(person => person.name)
-  return nameList.includes(name)
+
+  return getPersons()
+    .then(persons => {
+      const nameList = persons.map(person => person.name)
+      return nameList.includes(name)
+    })
 }
 
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
   const body = request.body
 
   if (!body.name || !body.number) {
@@ -141,21 +125,24 @@ app.post("/api/persons", (request, response) => {
     })
   }
 
-  if (nameExists(body.name)) {
-    return response.status(400).json({
-      error: "name must be unique"
-    })
-  }
-
   const newPerson = new Phonebook({
     name: body.name,
-    number: body.number,
-    id: generateUniqueID()
+    number: body.number
   })
 
-  newPerson.save().then((savedPerson) => {
-    response.json(savedPerson)
-  })
+  nameExists(body.name)
+    .then(isExistingName => {
+      if (isExistingName) {
+        response.status(400).json({
+          error: "name must be unique"
+        })
+      } else {
+        newPerson.save().then((savedPerson) => {
+          response.json(savedPerson)
+        })
+      }
+    })
+    .catch(error => next(error))
 })
 
 app.use(unknownEndpoint)
