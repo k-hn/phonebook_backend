@@ -22,6 +22,10 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).send({
       error: "malformed id"
     })
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({
+      error: error.message
+    })
   }
 
   next(error)
@@ -75,37 +79,22 @@ app.delete("/api/persons/:id", (request, response, next) => {
 })
 
 app.put("/api/persons/:id", (request, response, next) => {
-  const body = request.body
+  const { name, number } = request.body
 
   const contact = {
-    name: body.name,
-    number: body.number
+    name,
+    number
   }
 
-  Phonebook.findByIdAndUpdate(request.params.id, contact, { new: true })
+  Phonebook.findByIdAndUpdate(
+    request.params.id,
+    contact,
+    { new: true, runValidators: true, context: "query" })
     .then(updatedContact => {
       response.json(updatedContact)
     })
     .catch(error => next(error))
 })
-
-const generateRandomID = () => {
-  const max = 1000000
-  return Math.floor(Math.random() * max)
-}
-
-const generateUniqueID = () => {
-  let tempID = generateRandomID()
-  while (isExistingID(tempID)) {
-    tempID = generateRandomID()
-  }
-  return tempID
-}
-
-const isExistingID = (id) => {
-  const idList = persons.map(person => person.id)
-  return idList.includes(id)
-}
 
 const nameExists = (name) => {
 
@@ -117,29 +106,25 @@ const nameExists = (name) => {
 }
 
 app.post("/api/persons", (request, response, next) => {
-  const body = request.body
-
-  if (!body.name || !body.number) {
-    return response.status(400).json({
-      error: "name or number missing"
-    })
-  }
+  const { name, number } = request.body
 
   const newPerson = new Phonebook({
-    name: body.name,
-    number: body.number
+    name,
+    number
   })
 
-  nameExists(body.name)
+  nameExists(name)
     .then(isExistingName => {
       if (isExistingName) {
         response.status(400).json({
           error: "name must be unique"
         })
       } else {
-        newPerson.save().then((savedPerson) => {
-          response.json(savedPerson)
-        })
+        newPerson.save()
+          .then((savedPerson) => {
+            response.json(savedPerson)
+          })
+          .catch(error => next(error))
       }
     })
     .catch(error => next(error))
