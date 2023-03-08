@@ -1,7 +1,7 @@
-require("dotenv").config()
-const express = require("express")
-const morgan = require("morgan")
-const Phonebook = require("./models/phonebook")
+require('dotenv').config()
+const express = require('express')
+const morgan = require('morgan')
+const Phonebook = require('./models/phonebook')
 
 const app = express()
 
@@ -10,7 +10,7 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :p
 app.use(express.static('build'))
 
 // define custom token
-morgan.token("post-payload", function (req, res) {
+morgan.token('post-payload', function (req, res) {
   return JSON.stringify(req.body)
 })
 
@@ -18,11 +18,11 @@ morgan.token("post-payload", function (req, res) {
 const errorHandler = (error, request, response, next) => {
   console.log(error.message)
 
-  if (error.name === "CastError") {
+  if (error.name === 'CastError') {
     return response.status(400).send({
-      error: "malformed id"
+      error: 'malformed id'
     })
-  } else if (error.name === "ValidationError") {
+  } else if (error.name === 'ValidationError') {
     return response.status(400).json({
       error: error.message
     })
@@ -33,11 +33,11 @@ const errorHandler = (error, request, response, next) => {
 
 // Middleware to handle unknown endpoints
 const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" })
+  response.status(404).send({ error: 'unknown endpoint' })
 }
 
 
-app.get("/info", (request, response) => {
+app.get('/info', (request, response) => {
   const now = Date()
 
   getPersons().then(persons => {
@@ -48,7 +48,7 @@ app.get("/info", (request, response) => {
   })
 })
 
-app.get("/api/persons", (request, response) => {
+app.get('/api/persons', (request, response) => {
   getPersons().then(persons => response.json(persons))
 })
 
@@ -56,7 +56,7 @@ const getPersons = () => {
   return Phonebook.find({})
 }
 
-app.get("/api/persons/:id", (request, response, next) => {
+app.get('/api/persons/:id', (request, response, next) => {
   Phonebook
     .findById(request.params.id)
     .then(person => {
@@ -69,7 +69,7 @@ app.get("/api/persons/:id", (request, response, next) => {
     .catch(error => next(error))
 })
 
-app.delete("/api/persons/:id", (request, response, next) => {
+app.delete('/api/persons/:id', (request, response, next) => {
   Phonebook.findByIdAndDelete(request.params.id)
     .then(result => {
       console.log(`Contact id: ${request.params.id} deleted`)
@@ -78,7 +78,7 @@ app.delete("/api/persons/:id", (request, response, next) => {
     .catch(error => next(error))
 })
 
-app.put("/api/persons/:id", (request, response, next) => {
+app.put('/api/persons/:id', (request, response, next) => {
   const { name, number } = request.body
 
   const contact = {
@@ -89,7 +89,7 @@ app.put("/api/persons/:id", (request, response, next) => {
   Phonebook.findByIdAndUpdate(
     request.params.id,
     contact,
-    { new: true, runValidators: true, context: "query" })
+    { new: true, runValidators: true, context: 'query' })
     .then(updatedContact => {
       response.json(updatedContact)
     })
@@ -105,7 +105,7 @@ const nameExists = (name) => {
     })
 }
 
-app.post("/api/persons", (request, response, next) => {
+app.post('/api/persons', (request, response, next) => {
   const { name, number } = request.body
 
   const newPerson = new Phonebook({
@@ -117,7 +117,7 @@ app.post("/api/persons", (request, response, next) => {
     .then(isExistingName => {
       if (isExistingName) {
         response.status(400).json({
-          error: "name must be unique"
+          error: 'name must be unique'
         })
       } else {
         newPerson.save()
